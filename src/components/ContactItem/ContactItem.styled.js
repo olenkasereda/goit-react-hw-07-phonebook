@@ -18,7 +18,7 @@ export const ButtonDeleteContact = styled.button`
   padding-right: 10px;
   font-family: 'Montserrat', sans-serif;
   font-size: 20px;
-
+  margin-right: 25px;
   text-transform: uppercase;
   text-align: center;
   letter-spacing: 3px;

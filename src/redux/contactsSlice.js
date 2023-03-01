@@ -1,47 +1,64 @@
-import { createSlice, nanoid } from '@reduxjs/toolkit';
-import { persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { fetchContacts, addContact, deleteContact } from './operations';
 
-const contactsInitialState = [
-  { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-  { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-  { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-  { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-];
+const extraActions = [fetchContacts, addContact, deleteContact];
+
+const getActions = type => isAnyOf(...extraActions.map(action => action[type]));
+
+const fetchContactSuccessReducer = (state, action) => {
+  state.contacts.items = action.payload;
+};
+
+const addContactSuccessReducer = (state, action) => {
+  state.contacts.items.push(action.payload);
+};
+
+const deleteContactSuccessReducer = (state, action) => {
+  const index = state.contacts.items.findIndex(
+    task => task.id === action.payload.id
+  );
+  state.contacts.items.splice(index, 1);
+};
+
+const pendingReducer = state => {
+  state.contacts.isLoading = true;
+};
+
+const rejectedReducer = (state, action) => {
+  state.contacts.isLoading = false;
+  state.contacts.error = action.payload;
+};
+
+const fulfilledReducer = state => {
+  state.contacts.isLoading = false;
+  state.contacts.error = null;
+};
 
 const contactsSlice = createSlice({
   name: 'contacts',
-  initialState: { contacts: contactsInitialState },
+  initialState: {
+    contacts: {
+      items: [],
+      isLoading: false,
+      error: null,
+    },
+    filter: '',
+  },
 
   reducers: {
-    addContacts: {
-      reducer(state, action) {
-        state.contacts.push(action.payload);
-      },
-      prepare({ name, number }) {
-        return {
-          payload: {
-            name,
-            number,
-            id: nanoid(),
-          },
-        };
-      },
-    },
-    deleteContacts(state, action) {
-      state.contacts = state.contacts.filter(({ id }) => id !== action.payload);
+    contactsFilter(state, action) {
+      state.filter = action.payload;
     },
   },
+  extraReducers: builder =>
+    builder
+      .addCase(fetchContacts.fulfilled, fetchContactSuccessReducer)
+      .addCase(addContact.fulfilled, addContactSuccessReducer)
+      .addCase(deleteContact.fulfilled, deleteContactSuccessReducer)
+      .addMatcher(getActions('pending'), pendingReducer)
+      .addMatcher(getActions('rejected'), rejectedReducer)
+      .addMatcher(getActions('fulfilled'), fulfilledReducer),
 });
 
-const persistConfig = {
-  key: 'contacts',
-  storage,
-};
-
-export const contactsPersistedReducer = persistReducer(
-  persistConfig,
-  contactsSlice.reducer
-);
-
-export const { addContacts, deleteContacts } = contactsSlice.actions;
+export const { contactsFilter } = contactsSlice.actions;
+export const contactsReducer = contactsSlice.reducer;

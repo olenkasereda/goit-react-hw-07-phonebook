@@ -2,6 +2,10 @@ import { Formik, ErrorMessage } from 'formik';
 import * as yup from 'yup';
 import 'yup-phone';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact } from 'redux/operations';
+import { selectContacts } from 'redux/selectors';
+
 import {
   ContactForm,
   ButtonAdd,
@@ -9,28 +13,25 @@ import {
   FormInput,
   FormLabel,
 } from './FormContact.styled.js';
-import { useDispatch, useSelector } from 'react-redux';
-import { addContacts } from 'redux/contactsSlice.js';
-import { getContacts } from 'redux/selectors.js';
 
 const schema = yup.object().shape({
   name: yup
     .string()
     .min(2, 'Your name is too short')
     .required('Please enter full name'),
-  number: yup.string().required('Please enter number').phone('UA', true),
+  phone: yup.string().required('Please enter number').phone('UA', true),
 });
 
 const initialValues = {
   name: '',
-  number: '',
+  phone: '',
 };
 
 const FormContacts = () => {
   const dispatch = useDispatch();
-  const contacts = useSelector(getContacts);
+  const contacts = useSelector(selectContacts);
   const handleSubmit = (values, { resetForm }) => {
-    const { name, number } = values;
+    const { name, phone } = values;
 
     const names = contacts.find(
       contact => contact.name.toLowerCase() === name.toLowerCase()
@@ -40,7 +41,7 @@ const FormContacts = () => {
       return;
     }
 
-    dispatch(addContacts({ name: name, number: number }));
+    dispatch(addContact({ name: name, phone: phone }));
     resetForm();
   };
 
@@ -62,9 +63,9 @@ const FormContacts = () => {
           <FormInput
             placeholder="Phone number: +380..."
             type="tel"
-            name="number"
+            name="phone"
           />
-          <ErrorMessage name="number" component={InputError} />
+          <ErrorMessage name="phone" component={InputError} />
         </FormLabel>
         <ButtonAdd type="submit">Submit</ButtonAdd>
       </ContactForm>
